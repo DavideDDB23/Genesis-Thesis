@@ -15,7 +15,7 @@ class LocoEnv:
         show_viewer,
         eval,
         debug,
-        device='cpu',
+        device='mps',
     ) -> None:
         self.num_envs = 1 if num_envs == 0 else num_envs
         self.num_build_envs = num_envs
@@ -53,11 +53,12 @@ class LocoEnv:
         assert self.action_latency in [0, 0.02]
 
         self.num_dof = env_cfg['num_dofs']
-        if not torch.cuda.is_available():
-            self.device = torch.device('cpu')
-        else:
-            assert device in ['cpu', 'cuda']
+        if torch.cuda.is_available():
             self.device = torch.device(device)
+        elif torch.backends.mps.is_available():
+            self.device = torch.device('mps:0')
+        else:
+            self.device = torch.device('cpu')
 
         # create scene
         self.scene = gs.Scene(
@@ -133,8 +134,7 @@ class LocoEnv:
             visualize_contact=self.debug,
         )
 
-        if gs.platform != 'macOS':
-            self._set_camera()
+        self._set_camera()
 
         # build
         self.scene.build(n_envs=num_envs)
@@ -550,10 +550,7 @@ class LocoEnv:
         # self.rigid_solver.forward_kinematics() # no need currently
         self.compute_observations()
 
-        if gs.platform != 'macOS':
-            self._render_headless()
-        if not self.headless and self.debug:
-            self._draw_debug_vis()
+        self._render_headless()
 
         self.last_actions[:] = self.actions[:]
         self.last_last_actions[:] = self.last_actions[:]
