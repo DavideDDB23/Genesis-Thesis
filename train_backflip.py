@@ -224,7 +224,7 @@ def main():
         debug=args.debug,
     )
 
-    runner = OnPolicyRunner(env, get_train_cfg(args), log_dir, device='mps:0')
+    runner = OnPolicyRunner(env, get_train_cfg(args), log_dir, device='cuda:0')
 
     if args.resume is not None:
         resume_dir = f'logs/{args.resume}'
@@ -248,5 +248,5 @@ if __name__ == '__main__':
 
 """
 # training
-python train_backflip.py -e tesuto -B 1 --max_iterations 1
+python train_backflip -e tesuto -B 1 --max_iterations 1
 """

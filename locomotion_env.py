@@ -15,7 +15,7 @@ class LocoEnv:
         show_viewer,
         eval,
         debug,
-        device='mps',
+        device='cuda',
     ) -> None:
         self.num_envs = 1 if num_envs == 0 else num_envs
         self.num_build_envs = num_envs
@@ -53,12 +53,11 @@ class LocoEnv:
         assert self.action_latency in [0, 0.02]
 
         self.num_dof = env_cfg['num_dofs']
-        if torch.cuda.is_available():
-            self.device = torch.device(device)
-        elif torch.backends.mps.is_available():
-            self.device = torch.device('mps:0')
-        else:
+        if not torch.cuda.is_available():
             self.device = torch.device('cpu')
+        else:
+            assert device in ['cpu', 'cuda']
+            self.device = torch.device(device)
 
         # create scene
         self.scene = gs.Scene(
@@ -134,8 +133,8 @@ class LocoEnv:
             visualize_contact=self.debug,
         )
 
-        self._set_camera()
 
+        self._set_camera()
         # build
         self.scene.build(n_envs=num_envs)
 
@@ -851,24 +850,7 @@ class LocoEnv:
         kd_scales = gs.rand((len(env_ids), self.num_dof), dtype=float) \
                     * (max_scale - min_scale) + min_scale
         self.batched_d_gains[env_ids, :] = kd_scales * self.d_gains[None, :]
-    def _draw_debug_vis(self):
-        ''' Draws visualizations for dubugging (slows down simulation a lot).
-            Default behaviour: draws height measurement points
-        '''
-        self.scene.clear_debug_objects()
 
-        foot_poss = self.foot_positions[0].reshape(-1, 3)
-        # self.scene.draw_debug_spheres(poss=foot_poss, radius=0.03, color=(1, 0, 0, 0.7))
-
-        foot_poss = foot_poss.cpu()
-        self.scene.draw_debug_line(foot_poss[0], foot_poss[3], radius=0.002, color=(1, 0, 0, 0.7))
-        self.scene.draw_debug_line(foot_poss[1], foot_poss[2], radius=0.002, color=(1, 0, 0, 0.7))
-
-        com = self.com[0]
-        # self.scene.draw_debug_sphere(pos=com, radius=0.1, color=(0, 0, 1, 0.7))
-
-        com[2] = 0.02 + self.terrain_heights[0]
-        self.scene.draw_debug_sphere(pos=com, radius=0.02, color=(0, 0, 1, 0.7))
 
     def _set_camera(self):
         ''' Set camera position and direction
