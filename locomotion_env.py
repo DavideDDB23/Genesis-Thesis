@@ -53,11 +53,9 @@ class LocoEnv:
         assert self.action_latency in [0, 0.02]
 
         self.num_dof = env_cfg['num_dofs']
+
         if not torch.cuda.is_available():
-            self.device = torch.device('cpu')
-        else:
-            assert device in ['cpu', 'cuda']
-            self.device = torch.device(device)
+            self.device = torch.device('mps')
 
         # create scene
         self.scene = gs.Scene(
