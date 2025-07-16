@@ -2,13 +2,10 @@ import argparse
 import os
 import pickle
 import shutil
-
-import wandb
-from reward_wrapper import Backflip
+from reward_wrapper import FrontFlip
 from rsl_rl.runners import OnPolicyRunner
-
 import genesis as gs
-
+import wandb
 
 def get_train_cfg(args):
 
@@ -158,20 +155,21 @@ def get_cfgs():
         'num_priv_obs': 64,
     }
     reward_cfg = {
-        'soft_dof_pos_limit': 0.9,
+    'soft_dof_pos_limit': 0.9,
         'reward_scales': {
-            'ang_vel_y': 5.0,
-            'ang_vel_z': -1.0,
-            'lin_vel_z': 20.0,
+            'ang_vel_y': 7.0, # higher than in backflip
+            'ang_vel_z': -1.0,              
+            'lin_vel_z': 30.0,
             'orientation_control': -1.0,
-            'feet_height_before_backflip': -30.0,
-            'height_control': -10.0,
+            'feet_height_before_frontflip': -30.0,
+            'height_control': -15.0,
             'actions_symmetry': -0.1,
-            'gravity_y': -10.0,
+            'gravity_y': -10.0,           
             'feet_distance': -1.0,
-            'action_rate': -0.001,
+            'action_rate': -0.01,
+            'collision': -10.0, # to prevent landing on base
         },
-    }
+}
     command_cfg = {
         'num_commands': 4,
         'lin_vel_x_range': [-0.0, 0.0],
@@ -184,7 +182,7 @@ def get_cfgs():
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-e', '--exp_name', type=str, default='backflip')
+    parser.add_argument('-e', '--exp_name', type=str, default='frontflip_test_2')
     parser.add_argument('-v', '--vis', action='store_true', default=False)
     parser.add_argument('-c', '--cpu', action='store_true', default=False)
     parser.add_argument('-B', '--num_envs', type=int, default=10000)
@@ -214,7 +212,7 @@ def main():
         shutil.rmtree(log_dir)
     os.makedirs(log_dir, exist_ok=True)
 
-    env = Backflip(
+    env = FrontFlip(
         num_envs=args.num_envs,
         env_cfg=env_cfg,
         obs_cfg=obs_cfg,
@@ -233,21 +231,18 @@ def main():
         print('==> resume training from', resume_path)
         runner.load(resume_path)
 
-    wandb.init(project='genesis', name=args.exp_name, dir=log_dir, mode='offline' if args.offline else 'online')
 
     pickle.dump(
         [env_cfg, obs_cfg, reward_cfg, command_cfg],
         open(f'{log_dir}/cfgs.pkl', 'wb'),
     )
-
+    wandb.init(project='genesis', name=args.exp_name, dir=log_dir, mode='online')
     runner.learn(num_learning_iterations=args.max_iterations, init_at_random_ep_len=True)
 
 
 if __name__ == '__main__':
     main()
 
-
-"""
-# training
-python train_backflip -e tesuto -B 1 --max_iterations 1
-"""
+'''
+python train_frontflip.py -e experiment_name  -B num_envs --max_iterations max_iterations 
+'''

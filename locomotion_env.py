@@ -55,7 +55,10 @@ class LocoEnv:
         self.num_dof = env_cfg['num_dofs']
 
         if not torch.cuda.is_available():
-            self.device = torch.device('mps')
+            if torch.backends.mps.is_available():
+                self.device = torch.device('mps')
+            else:
+                self.device = torch.device('cpu')
 
         # create scene
         self.scene = gs.Scene(
