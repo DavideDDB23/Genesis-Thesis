@@ -168,12 +168,6 @@ def get_cfgs():
             'feet_distance': -1.0,
             'action_rate': -0.01,
             'collision': -10.0, # to prevent landing on base
-            # Refinement rewards
-            'torques': -0.0001,
-            'dof_pos_limits': -10.0,
-            'feet_tuck': -2.0,
-            'soft_landing': -0.1,
-            'post_landing_stability': -5.0,
         },
 }
     command_cfg = {

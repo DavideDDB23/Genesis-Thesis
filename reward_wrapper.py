@@ -490,29 +490,3 @@ class FrontFlip(Go2):
         Prevents the robot from crashing or landing on its base/body, encouraging a clean flip and feet-first landing."""
         return (1.0 * (torch.norm(self.link_contact_forces[:, self.penalized_contact_link_indices, :], dim=-1) > 0.1)).sum(dim=1)
 
-    def _reward_feet_tuck(self):
-        """Encourages tucking legs in mid-air for a more efficient flip."""
-        current_time = self.episode_length_buf * self.dt
-        # Get feet positions relative to the base
-        feet_pos_in_base_frame = self.foot_positions - self.base_pos.unsqueeze(1)
-        # Penalize the distance of feet from the base COM during the flip
-        tuck_distance = torch.norm(feet_pos_in_base_frame, dim=-1).sum(dim=1)
-        # Apply this reward only during the flip phase
-        return tuck_distance * torch.logical_and(current_time > 0.6, current_time < 1.0)
-
-    def _reward_soft_landing(self):
-        """Penalizes high contact forces on the feet to encourage a soft landing."""
-        current_time = self.episode_length_buf * self.dt
-        foot_forces = torch.norm(self.link_contact_forces[:, self.feet_link_indices, :], dim=-1)
-        # Penalize high forces after the flip is supposed to be over
-        return foot_forces.sum(dim=1) * (current_time > 1.2)
-
-    def _reward_post_landing_stability(self):
-        """Penalizes base motion after landing to encourage a stable stop."""
-        current_time = self.episode_length_buf * self.dt
-        # Penalize linear and angular velocities after landing
-        lin_vel_penalty = torch.sum(torch.square(self.base_lin_vel), dim=1)
-        ang_vel_penalty = torch.sum(torch.square(self.base_ang_vel), dim=1)
-        # Apply penalty after the robot should have landed and stabilized
-        return (lin_vel_penalty + ang_vel_penalty) * (current_time > 1.5)
-
