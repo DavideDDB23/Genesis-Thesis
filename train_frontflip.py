@@ -182,7 +182,7 @@ def get_cfgs():
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-e', '--exp_name', type=str, default='frontflip_test_2')
+    parser.add_argument('-e', '--exp_name', type=str, default='frontflip')
     parser.add_argument('-v', '--vis', action='store_true', default=False)
     parser.add_argument('-c', '--cpu', action='store_true', default=False)
     parser.add_argument('-B', '--num_envs', type=int, default=10000)
@@ -236,7 +236,7 @@ def main():
         [env_cfg, obs_cfg, reward_cfg, command_cfg],
         open(f'{log_dir}/cfgs.pkl', 'wb'),
     )
-    wandb.init(project='genesis', name=args.exp_name, dir=log_dir, mode='online')
+    wandb.init(project='genesis', name=args.exp_name, dir=log_dir, mode='offline' if args.offline else 'online')
     runner.learn(num_learning_iterations=args.max_iterations, init_at_random_ep_len=True)
 
 
@@ -244,5 +244,5 @@ if __name__ == '__main__':
     main()
 
 '''
-python train_frontflip.py -e experiment_name  -B num_envs --max_iterations max_iterations 
+python train_frontflip.py args
 '''

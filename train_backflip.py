@@ -249,5 +249,5 @@ if __name__ == '__main__':
 
 """
 # training
-python train_backflip -e tesuto -B 1 --max_iterations 1
+python train_backflip.py args
 """
